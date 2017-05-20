@@ -1,0 +1,28 @@
+{
+  "name": "power-tap",
+  "version": "1.0.0",
+  "description": "Run tests in the browser or node, with nice power-assert messages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TehShrike/power-tap.git"
+  },
+  "keywords": [
+    "test",
+    "tape",
+    "tap",
+    "assert",
+    "power-assert",
+    "browser",
+    "node"
+  ],
+  "author": "TehShrike",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/TehShrike/power-tap/issues"
+  },
+  "homepage": "https://github.com/TehShrike/power-tap#readme"
+}
