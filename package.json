@@ -2,9 +2,13 @@
   "name": "power-tap",
   "version": "1.0.0",
   "description": "Run tests in the browser or node, with nice power-assert messages",
+  "bin": "bin.js",
   "main": "index.js",
+  "browser": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test-with-tape; npm run test-with-power-tap",
+    "test-with-power-tap": "TESTER='power-tap' ./bin.js \"test/**/*.js\"",
+    "test-with-tape": "tape \"test/**/*.js\""
   },
   "repository": {
     "type": "git",
@@ -24,5 +28,18 @@
   "bugs": {
     "url": "https://github.com/TehShrike/power-tap/issues"
   },
-  "homepage": "https://github.com/TehShrike/power-tap#readme"
+  "homepage": "https://github.com/TehShrike/power-tap#readme",
+  "devDependencies": {
+    "loud-rejection": "1.6.0",
+    "tape": "4.6.3"
+  },
+  "dependencies": {
+    "assert-no-throw": "1.0.0",
+    "espower-loader": "~1.2.2",
+    "eventemitter3": "2.0.3",
+    "glob": "7.1.2",
+    "iso-next-tick": "1.0.0",
+    "power-assert": "~1.4.3",
+    "tap-strings": "1.0.0"
+  }
 }

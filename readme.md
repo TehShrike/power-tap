@@ -11,9 +11,13 @@ I really like [`node-tap`](https://github.com/tapjs/node-tap), [`ava`](https://g
 
 With these niceities:
 
-1. No bundling or transpiling (tape, node-tap)
+1. No bundling or transpiling required (tape, node-tap)
 2. Promise-aware tests, eliminating `end` calls (ava)
 3. Run tests concurrently (node-tap, ava) but only in a single-process (for easier browser testing and simpler code)
+
+Limitation: power-assert's pretty output requires some magic.  For pretty error messages, you'll need to launch your tests with the power-tap launcher, or use the espower [browserify transform](https://github.com/power-assert-js/espowerify) or [babel plugin](https://github.com/power-assert-js/babel-plugin-espower) when transpiling for the browser.
+
+It may be possible through some really awful hacks to get the pretty error messages in node without having to use the launcher, but I'm not ready to head down that road yet.
 
 ## Other assertions
 
