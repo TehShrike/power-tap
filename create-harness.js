@@ -1,6 +1,8 @@
 const EventEmitter = require('eventemitter3')
 const noThrow = require('assert-no-throw')
 const rawAssert = require('power-assert')
+const pRace = require('p-race')
+const delay = require('delay')
 
 const defaultOptions = {
 	shouldThrow: false
@@ -23,44 +25,70 @@ module.exports = function createTestHarness({ shouldThrow } = defaultOptions) {
 		let pass = 0
 		let fail = 0
 
-		const promises = testQueue.map(({ description, fn, args }) => {
-			const { results, assert } = noThrow(rawAssert)
-			let plannedTests = null
+		function emitTestResults(results) {
+			results.forEach(result => {
+				harness.emit('test', {
+					ok: result.pass,
+					message: result.message || result.method
+				})
 
-			const testApi = Object.create(assert)
-			testApi.plan = function plan(expectedTests) {
-				if (typeof expectedTests !== 'number') {
-					assert.fail(typeof expectedTests, 'number', 'plan() was called without a number')
-				} else if (plannedTests !== null) {
-					assert.fail(expectedTests, null, 'plan() was called more than once')
+				if (result.error) {
+					harness.emit('error', result.error)
+					fail++
 				} else {
-					plannedTests = expectedTests
+					pass++
 				}
-			}
+			})
+		}
 
-			function reportSingleTestResults() {
-				harness.emit('test name', description)
+		const promises = testQueue.map(({ description, fn, args }) => {
+			const results = []
+			const catcher = noThrow(rawAssert)
+			const assert = catcher.assert
+			let done = false
+			catcher.on('assert', result => {
+				if (!done) {
+					results.push(result)
+				}
+			})
+			let plannedTests = null
+			let timeoutAfterMs = 5000
+
+			const testApi = Object.assign({
+				plan(expectedTests) {
+					if (typeof expectedTests !== 'number') {
+						assert.fail(typeof expectedTests, 'number', 'plan() was called without a number')
+					} else if (plannedTests !== null) {
+						assert.fail(expectedTests, null, 'plan() was called more than once')
+					} else {
+						plannedTests = expectedTests
+					}
+				},
+				timeoutAfter(ms) {
+					if (typeof ms !== 'number') {
+						assert.fail(typeof ms, 'number', 'timeoutAfter() was called without a number')
+					} else {
+						timeoutAfterMs = ms
+					}
+				}
+			}, assert)
+
+			function completeSingleTest() {
 				if (plannedTests !== null && results.length !== plannedTests) {
 					assert.fail(results.length, plannedTests, 'plan != count')
 				}
-				results.forEach(result => {
-					harness.emit('test', {
-						ok: result.pass,
-						description: typeof result.description === 'string' ? result.description : result.method
-					})
 
-					if (result.error) {
-						harness.emit('error', result.error)
-						fail++
-					} else {
-						pass++
-					}
-				})
+				done = true
+
+				return {
+					description,
+					results: Object.freeze(results)
+				}
 			}
 
 			function handleError(err) {
 				assert.ifError(err || 'Test errored!')
-				reportSingleTestResults()
+				return completeSingleTest()
 			}
 
 			const potentialPromise = tryf(() => fn(testApi, ...args), handleError)
@@ -68,19 +96,28 @@ module.exports = function createTestHarness({ shouldThrow } = defaultOptions) {
 			const isAsync = isThenable(potentialPromise)
 
 			if (isAsync) {
-				return Promise.resolve(potentialPromise)
-					.then(reportSingleTestResults)
-					.catch(handleError)
+				const timeoutAfterPromise = delay(timeoutAfterMs).then(() => {
+					assert.fail(null, null, `test timed out after ${timeoutAfterMs}ms`)
+				})
+
+				return pRace([
+					Promise.resolve(potentialPromise),
+					timeoutAfterPromise
+				]).then(completeSingleTest).catch(handleError)
 			} else {
-				reportSingleTestResults()
-				return Promise.resolve()
+				return Promise.resolve(completeSingleTest())
 			}
 		})
 
-		return Promise.all(promises).then(() => {
+		return Promise.all(promises).then(allTests => {
+			allTests.forEach(({ description, results }) => {
+				harness.emit('test name', description)
+				emitTestResults(results)
+			})
+
 			harness.emit('plan', {
 				start: 1,
-				end: testQueue.length
+				end: pass + fail
 			})
 			harness.emit('diagnostic', `tests ${pass + fail}`)
 			harness.emit('diagnostic', `pass  ${pass}`)

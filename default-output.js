@@ -16,7 +16,7 @@ module.exports = function outputToConsoleLog(harness) {
 	}
 
 	log(tap.version(13))
-	harness.on('test', isTest(({ ok, description }) => log(tap.test(ok, ++testNumber, description))))
+	harness.on('test', isTest(({ ok, message }) => log(tap.test(ok, ++testNumber, message))))
 
 	harness.on('plan', isNotTest(({ start, end }) => log(tap.plan(start, end))))
 	const diagnosticOutput = isNotTest(message => log(tap.diagnostic(message)))

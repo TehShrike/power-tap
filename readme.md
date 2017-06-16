@@ -24,3 +24,11 @@ It may be possible through some really awful hacks to get the pretty error messa
 - tests results are output in a deterministic order
 - tests that do not return a promise are considered synchronous and end immediately
 - tests marked serial will not be run concurrently with any other tests
+
+## TODO
+
+- test in browsers (get that process.exit call out of index.js)
+- implement serial tests
+- make the runner able to take any number of patterns with [globby](https://github.com/sindresorhus/globby)
+- make it possible for any process to set a global "everything runs serial" option (think browser tests for hash-brown-router)
+- figure out a reasonable way to expose the results to any code that cares to look at them from another file
